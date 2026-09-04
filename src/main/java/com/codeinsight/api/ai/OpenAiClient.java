@@ -3,7 +3,6 @@ package com.codeinsight.api.ai;
 import com.codeinsight.api.github.RepoSnapshot;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -11,9 +10,9 @@ import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
@@ -58,20 +57,14 @@ public class OpenAiClient {
     private final String model;
 
     public OpenAiClient(
-            RestClient.Builder builder,
+            @Qualifier("openAiRestClient") RestClient restClient,
             ObjectMapper objectMapper,
             @Value("${app.openai.api-key:}") String apiKey,
             @Value("${app.openai.model:gpt-5.6-luna}") String model) {
+        this.restClient = restClient;
         this.objectMapper = objectMapper;
         this.apiKey = apiKey;
         this.model = model;
-        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout((int) Duration.ofSeconds(5).toMillis());
-        factory.setReadTimeout((int) Duration.ofSeconds(45).toMillis());
-        this.restClient = builder
-                .baseUrl("https://api.openai.com/v1")
-                .requestFactory(factory)
-                .build();
     }
 
     public boolean isEnabled() {
@@ -96,7 +89,6 @@ public class OpenAiClient {
         String raw = restClient
                 .post()
                 .uri("/chat/completions")
-                .header("Authorization", "Bearer " + apiKey)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(body)
                 .retrieve()
