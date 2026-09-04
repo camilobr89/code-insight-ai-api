@@ -1,6 +1,7 @@
 package com.codeinsight.api.web;
 
 import com.codeinsight.api.domain.Analysis;
+import com.codeinsight.api.service.AnalysisResult;
 import com.codeinsight.api.service.AnalysisService;
 import com.codeinsight.api.web.dto.AnalysisResponse;
 import com.codeinsight.api.web.dto.AnalyzeRequest;
@@ -27,22 +28,19 @@ public class AnalysisController {
 
     @PostMapping
     public ResponseEntity<AnalysisResponse> analyze(@Valid @RequestBody AnalyzeRequest request) {
-        Analysis analysis = service.analyze(request.repoUrl());
-        AnalysisResponse body = AnalysisResponse.from(analysis);
-        return ResponseEntity.created(URI.create("/api/analyses/" + analysis.getId())).body(body);
+        AnalysisResult result = service.analyze(request.repoUrl(), request.forceRefresh());
+        AnalysisResponse body = AnalysisResponse.from(result.analysis(), result.cached());
+        return ResponseEntity.created(URI.create("/api/analyses/" + result.analysis().getId())).body(body);
     }
 
     @GetMapping
     public List<AnalysisResponse> history() {
-        return service.history().stream().map(AnalysisResponse::from).toList();
+        return service.history().stream().map(a -> AnalysisResponse.from(a, true)).toList();
     }
 
     @GetMapping("/{id}")
     public AnalysisResponse byId(@PathVariable Long id) {
-        return service.history().stream()
-                .filter(a -> a.getId().equals(id))
-                .findFirst()
-                .map(AnalysisResponse::from)
-                .orElseThrow(() -> new AnalysisNotFoundException(id));
+        Analysis analysis = service.findById(id).orElseThrow(() -> new AnalysisNotFoundException(id));
+        return AnalysisResponse.from(analysis, true);
     }
 }

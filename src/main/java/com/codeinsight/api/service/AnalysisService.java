@@ -1,39 +1,114 @@
 package com.codeinsight.api.service;
 
+import com.codeinsight.api.ai.AiInsight;
+import com.codeinsight.api.ai.OpenAiClient;
 import com.codeinsight.api.domain.Analysis;
+import com.codeinsight.api.github.GitHubRepoClient;
+import com.codeinsight.api.github.RepoSnapshot;
 import com.codeinsight.api.repository.AnalysisRepository;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-/**
- * Minimal (heuristic) reverse-engineering engine.
- *
- * <p>For the MVP it infers the stack and architecture from the repository URL instead of
- * cloning the repository. The {@link #infer(String)} method is a pure function so it can be
- * unit-tested without a database.
- */
 @Service
 public class AnalysisService {
 
-    private final AnalysisRepository repository;
+    private static final Logger log = LoggerFactory.getLogger(AnalysisService.class);
 
-    public AnalysisService(AnalysisRepository repository) {
+    private final AnalysisRepository repository;
+    private final GitHubRepoClient gitHubRepoClient;
+    private final OpenAiClient openAiClient;
+
+    public AnalysisService(
+            AnalysisRepository repository, GitHubRepoClient gitHubRepoClient, OpenAiClient openAiClient) {
         this.repository = repository;
+        this.gitHubRepoClient = gitHubRepoClient;
+        this.openAiClient = openAiClient;
     }
 
-    /** Runs the inference and persists the result. */
-    public Analysis analyze(String repoUrl) {
-        Analysis analysis = infer(repoUrl);
+    public AnalysisResult analyze(String rawRepoUrl, boolean forceRefresh) {
+        String repoUrl = normalize(rawRepoUrl);
+
+        if (!forceRefresh) {
+            Optional<Analysis> cached = repository.findFirstByRepoUrlOrderByCreatedAtDesc(repoUrl);
+            if (cached.isPresent()) {
+                return new AnalysisResult(cached.get(), true);
+            }
+        }
+
+        Analysis analysis = performFreshAnalysis(repoUrl);
+        analysis.setRepoUrl(repoUrl);
         analysis.setCreatedAt(Instant.now());
-        return repository.save(analysis);
+        return new AnalysisResult(repository.save(analysis), false);
     }
 
     public List<Analysis> history() {
-        return repository.findAll();
+        return repository.findAllByOrderByCreatedAtDesc();
     }
 
-    /** Pure inference logic — no side effects, safe to unit-test. */
+    public Optional<Analysis> findById(Long id) {
+        return repository.findById(id);
+    }
+
+    private Analysis performFreshAnalysis(String repoUrl) {
+        // Sin OPENAI_API_KEY se evita también la llamada a GitHub (modo 100% offline).
+        if (!openAiClient.isEnabled()) {
+            return infer(repoUrl);
+        }
+
+        Optional<RepoSnapshot> snapshot = gitHubRepoClient.fetch(repoUrl);
+        if (snapshot.isEmpty()) {
+            return infer(repoUrl);
+        }
+
+        try {
+            AiInsight insight = openAiClient.infer(repoUrl, snapshot.get());
+            return toAnalysis(repoUrl, snapshot.get(), insight);
+        } catch (Exception e) {
+            log.warn("Inferencia con IA falló para {}, usando heurística de respaldo: {}", repoUrl, e.getMessage());
+            Analysis heuristic = infer(repoUrl);
+            heuristic.setFileCount(snapshot.get().fileCount());
+            return heuristic;
+        }
+    }
+
+    private static Analysis toAnalysis(String repoUrl, RepoSnapshot snapshot, AiInsight insight) {
+        Analysis analysis = new Analysis();
+        analysis.setRepoUrl(repoUrl);
+        analysis.setProjectName(snapshot.repo());
+        analysis.setMainLanguage(firstNonBlank(insight.mainLanguage(), snapshot.primaryLanguage()));
+        analysis.setFramework(insight.framework());
+        analysis.setArchitecture(insight.architecture());
+        analysis.setFileCount(snapshot.fileCount());
+        analysis.setSummary(insight.summary());
+        analysis.setComponents(String.join("\n", insight.components()));
+        analysis.setRecommendations(String.join("\n", insight.recommendations()));
+        analysis.setRisks(String.join("\n", insight.risks()));
+        analysis.setEvidence(String.join("\n", insight.evidence()));
+        return analysis;
+    }
+
+    private static String firstNonBlank(String a, String b) {
+        return (a != null && !a.isBlank()) ? a : b;
+    }
+
+    static String normalize(String repoUrl) {
+        if (repoUrl == null) {
+            return null;
+        }
+        String cleaned = repoUrl.trim();
+        if (cleaned.endsWith("/")) {
+            cleaned = cleaned.substring(0, cleaned.length() - 1);
+        }
+        if (cleaned.endsWith(".git")) {
+            cleaned = cleaned.substring(0, cleaned.length() - 4);
+        }
+        return cleaned;
+    }
+
     public Analysis infer(String repoUrl) {
         String url = repoUrl == null ? "" : repoUrl.toLowerCase();
         String projectName = projectNameFrom(repoUrl);
@@ -62,11 +137,12 @@ public class AnalysisService {
         analysis.setProjectName(projectName);
         analysis.setMainLanguage(language);
         analysis.setFramework(framework);
-        analysis.setArchitecture("Angular".equals(framework) ? "SPA / Componentes" : "MVC / N-Capas");
+        analysis.setArchitecture("Angular".equals(framework) ? "MVC" : "N-Capas");
         analysis.setFileCount(estimateFileCount(repoUrl));
         analysis.setSummary(String.format(
                 "Esta aplicación (%s) es un proyecto %s construido con %s. "
-                        + "Expone/consume una API REST y sigue una arquitectura de %s.",
+                        + "Expone/consume una API REST y sigue una arquitectura de %s. "
+                        + "(Análisis heurístico: no se pudo consultar GitHub/IA para esta URL.)",
                 projectName, language, framework,
                 "Angular".equals(framework) ? "componentes" : "capas"));
         analysis.setComponents(String.join("\n", detectComponents(framework)));
@@ -77,6 +153,8 @@ public class AnalysisService {
         analysis.setRisks(String.join("\n",
                 "No se evidencia una capa de pruebas automatizadas suficiente.",
                 "Posible acoplamiento entre capas."));
+        analysis.setEvidence(String.join("\n",
+                "Inferido a partir del texto de la URL (sin acceso a GitHub/IA)."));
         return analysis;
     }
 
