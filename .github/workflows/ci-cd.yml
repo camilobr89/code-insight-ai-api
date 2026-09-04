@@ -1,0 +1,30 @@
+name: CI/CD
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write   # requerido para autenticación OIDC con AWS
+  contents: read
+
+jobs:
+  ci-cd:
+    uses: my-banking-app/ci-templates/.github/workflows/aws-java-ecs-ci-cd.yml@v1.3.3
+    with:
+      service-name: code-insight-ai-api
+      ecr-repository: code-insight-ai-api
+      ecs-cluster: code-insight-ai
+      ecs-service: code-insight-ai-api
+      ecs-task-definition: task-definition.json
+      container-name: code-insight-ai-api
+      aws-region: us-east-1
+      java-version: '21'
+      sonar-project-key: camilobr89_code-insight-ai-api
+      frontend-config-s3-bucket: code-insight-ai-web-647725048062
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
