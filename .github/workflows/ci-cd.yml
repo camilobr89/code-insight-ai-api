@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   ci-cd:
-    uses: my-banking-app/ci-templates/.github/workflows/aws-java-ecs-ci-cd.yml@v1.3.5
+    uses: my-banking-app/ci-templates/.github/workflows/aws-java-ecs-ci-cd.yml@v1.3.6
     with:
       service-name: code-insight-ai-api
       ecr-repository: code-insight-ai-api
@@ -28,3 +28,5 @@ jobs:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
       DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      GITHUB_TOKEN_FOR_ANALYSIS: ${{ secrets.GITHUB_TOKEN_FOR_ANALYSIS }}

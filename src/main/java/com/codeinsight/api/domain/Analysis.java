@@ -28,7 +28,6 @@ public class Analysis {
     @Column(length = 1000)
     private String summary;
 
-    /** Newline-separated values (mapped to/from lists in the web layer). */
     @Column(length = 2000)
     private String components;
 
@@ -38,10 +37,12 @@ public class Analysis {
     @Column(length = 2000)
     private String risks;
 
+    @Column(length = 2000)
+    private String evidence;
+
     private Instant createdAt;
 
     public Analysis() {
-        // Required by JPA
     }
 
     public Long getId() {
@@ -126,6 +127,14 @@ public class Analysis {
 
     public void setRisks(String risks) {
         this.risks = risks;
+    }
+
+    public String getEvidence() {
+        return evidence;
+    }
+
+    public void setEvidence(String evidence) {
+        this.evidence = evidence;
     }
 
     public Instant getCreatedAt() {

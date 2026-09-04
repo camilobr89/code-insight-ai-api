@@ -16,9 +16,11 @@ public record AnalysisResponse(
         List<String> components,
         List<String> recommendations,
         List<String> risks,
-        Instant createdAt) {
+        List<String> evidence,
+        Instant createdAt,
+        boolean cached) {
 
-    public static AnalysisResponse from(Analysis analysis) {
+    public static AnalysisResponse from(Analysis analysis, boolean cached) {
         return new AnalysisResponse(
                 analysis.getId(),
                 analysis.getRepoUrl(),
@@ -31,7 +33,9 @@ public record AnalysisResponse(
                 splitLines(analysis.getComponents()),
                 splitLines(analysis.getRecommendations()),
                 splitLines(analysis.getRisks()),
-                analysis.getCreatedAt());
+                splitLines(analysis.getEvidence()),
+                analysis.getCreatedAt(),
+                cached);
     }
 
     private static List<String> splitLines(String value) {

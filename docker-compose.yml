@@ -1,6 +1,7 @@
 # Entorno local para probar la API + Postgres antes de hacer push.
-#   docker compose up --build
+#   OPENAI_API_KEY=sk-... docker compose up --build
 # La API queda en http://localhost:8080 (health: /actuator/health).
+# Sin OPENAI_API_KEY, el análisis cae automáticamente al modo heurístico (no falla).
 services:
   db:
     image: postgres:16-alpine
@@ -28,6 +29,10 @@ services:
       SPRING_DATASOURCE_USERNAME: codeinsight
       SPRING_DATASOURCE_PASSWORD: codeinsight
       APP_CORS_ALLOWED_ORIGINS: "http://localhost:4200"
+      # Se toman del entorno del host; no se hardcodean acá (evita subir secretos al repo).
+      OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
+      OPENAI_MODEL: "${OPENAI_MODEL:-gpt-5.6-luna}"
+      GITHUB_TOKEN: "${GITHUB_TOKEN:-}"
     ports:
       - "8080:8080"
 
