@@ -1,0 +1,33 @@
+{
+  "family": "code-insight-ai-api",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::647725048062:role/CodeInsightAI-ecs-exec",
+  "containerDefinitions": [
+    {
+      "name": "code-insight-ai-api",
+      "image": "PLACEHOLDER_IMAGE",
+      "essential": true,
+      "portMappings": [
+        { "containerPort": 8080, "protocol": "tcp" }
+      ],
+      "environment": [
+        { "name": "SPRING_PROFILES_ACTIVE", "value": "prod" },
+        { "name": "SPRING_DATASOURCE_URL", "value": "jdbc:postgresql://code-insight-ai-db.c1wugkygmg9n.us-east-1.rds.amazonaws.com:5432/codeinsight" },
+        { "name": "SPRING_DATASOURCE_USERNAME", "value": "codeinsight" },
+        { "name": "APP_CORS_ALLOWED_ORIGINS", "value": "*" }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/code-insight-ai-api",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs",
+          "awslogs-create-group": "true"
+        }
+      }
+    }
+  ]
+}
