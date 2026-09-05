@@ -23,7 +23,6 @@ jobs:
       aws-region: us-east-1
       java-version: '21'
       sonar-project-key: camilobr89_code-insight-ai-api
-      frontend-config-s3-bucket: code-insight-ai-web-647725048062
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
