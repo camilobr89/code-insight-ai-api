@@ -3,9 +3,10 @@ package com.codeinsight.api.web.dto;
 import com.codeinsight.api.domain.Analysis;
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 public record AnalysisResponse(
-        Long id,
+        UUID id,
         String repoUrl,
         String projectName,
         String mainLanguage,

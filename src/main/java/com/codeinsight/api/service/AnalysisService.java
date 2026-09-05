@@ -9,6 +9,7 @@ import com.codeinsight.api.repository.AnalysisRepository;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -49,11 +50,11 @@ public class AnalysisService {
         return repository.findAllByOrderByCreatedAtDesc();
     }
 
-    public Optional<Analysis> findById(Long id) {
+    public Optional<Analysis> findById(UUID id) {
         return repository.findById(id);
     }
 
-    public boolean deleteById(Long id) {
+    public boolean deleteById(UUID id) {
         if (!repository.existsById(id)) {
             return false;
         }

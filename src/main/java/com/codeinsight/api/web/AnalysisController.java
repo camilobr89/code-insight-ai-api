@@ -8,6 +8,7 @@ import com.codeinsight.api.web.dto.AnalyzeRequest;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.List;
+import java.util.UUID;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -40,13 +41,13 @@ public class AnalysisController {
     }
 
     @GetMapping("/{id}")
-    public AnalysisResponse byId(@PathVariable Long id) {
+    public AnalysisResponse byId(@PathVariable UUID id) {
         Analysis analysis = service.findById(id).orElseThrow(() -> new AnalysisNotFoundException(id));
         return AnalysisResponse.from(analysis, true);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteById(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteById(@PathVariable UUID id) {
         if (!service.deleteById(id)) {
             throw new AnalysisNotFoundException(id);
         }

@@ -2,7 +2,6 @@ package com.codeinsight.api.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -18,6 +17,7 @@ import com.codeinsight.api.repository.AnalysisRepository;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 class AnalysisServiceTest {
@@ -174,24 +174,26 @@ class AnalysisServiceTest {
     void deleteByIdReturnsTrueAndDeletesWhenPresent() {
         AnalysisRepository repository = mock(AnalysisRepository.class);
         AnalysisService service = new AnalysisService(repository, null, null);
-        when(repository.existsById(1L)).thenReturn(true);
+        UUID id = UUID.randomUUID();
+        when(repository.existsById(id)).thenReturn(true);
 
-        boolean deleted = service.deleteById(1L);
+        boolean deleted = service.deleteById(id);
 
         assertThat(deleted).isTrue();
-        verify(repository).deleteById(1L);
+        verify(repository).deleteById(id);
     }
 
     @Test
     void deleteByIdReturnsFalseWhenMissing() {
         AnalysisRepository repository = mock(AnalysisRepository.class);
         AnalysisService service = new AnalysisService(repository, null, null);
-        when(repository.existsById(99L)).thenReturn(false);
+        UUID id = UUID.randomUUID();
+        when(repository.existsById(id)).thenReturn(false);
 
-        boolean deleted = service.deleteById(99L);
+        boolean deleted = service.deleteById(id);
 
         assertThat(deleted).isFalse();
-        verify(repository, never()).deleteById(anyLong());
+        verify(repository, never()).deleteById(any(UUID.class));
     }
 
     @Test

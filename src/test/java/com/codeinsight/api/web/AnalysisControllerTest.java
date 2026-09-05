@@ -54,7 +54,7 @@ class AnalysisControllerTest {
 
     @Test
     void unknownIdReturnsNotFound() throws Exception {
-        mockMvc.perform(get("/api/analyses/999999"))
+        mockMvc.perform(get("/api/analyses/00000000-0000-0000-0000-000000000000"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status", is(404)));
     }
@@ -68,7 +68,7 @@ class AnalysisControllerTest {
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
-        long id = objectMapper.readTree(body).get("id").asLong();
+        String id = objectMapper.readTree(body).get("id").asText();
 
         mockMvc.perform(delete("/api/analyses/" + id)).andExpect(status().isNoContent());
         mockMvc.perform(get("/api/analyses/" + id)).andExpect(status().isNotFound());
@@ -76,7 +76,7 @@ class AnalysisControllerTest {
 
     @Test
     void deleteByIdReturnsNotFoundForUnknownId() throws Exception {
-        mockMvc.perform(delete("/api/analyses/999999")).andExpect(status().isNotFound());
+        mockMvc.perform(delete("/api/analyses/00000000-0000-0000-0000-000000000000")).andExpect(status().isNotFound());
     }
 
     @Test
@@ -89,8 +89,8 @@ class AnalysisControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"repoUrl\":\"https://github.com/acme/clear-b\"}"))
                 .andReturn().getResponse().getContentAsString();
-        long idA = objectMapper.readTree(bodyA).get("id").asLong();
-        long idB = objectMapper.readTree(bodyB).get("id").asLong();
+        String idA = objectMapper.readTree(bodyA).get("id").asText();
+        String idB = objectMapper.readTree(bodyB).get("id").asText();
 
         mockMvc.perform(delete("/api/analyses")).andExpect(status().isNoContent());
 
