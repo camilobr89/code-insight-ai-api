@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -42,5 +43,19 @@ public class AnalysisController {
     public AnalysisResponse byId(@PathVariable Long id) {
         Analysis analysis = service.findById(id).orElseThrow(() -> new AnalysisNotFoundException(id));
         return AnalysisResponse.from(analysis, true);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteById(@PathVariable Long id) {
+        if (!service.deleteById(id)) {
+            throw new AnalysisNotFoundException(id);
+        }
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping
+    public ResponseEntity<Void> deleteAll() {
+        service.deleteAll();
+        return ResponseEntity.noContent().build();
     }
 }
