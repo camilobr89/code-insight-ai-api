@@ -2,6 +2,7 @@ package com.codeinsight.api.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -33,6 +34,7 @@ class AnalysisServiceTest {
         assertThat(result.getFileCount()).isPositive();
         assertThat(result.getComponents()).contains("Controllers");
         assertThat(result.getSummary()).contains("spring-petclinic");
+        assertThat(result.getSource()).isEqualTo("HEURISTIC");
     }
 
     @Test
@@ -103,6 +105,7 @@ class AnalysisServiceTest {
         assertThat(result.analysis().getArchitecture()).isEqualTo("MVC");
         assertThat(result.analysis().getFileCount()).isEqualTo(1);
         assertThat(result.analysis().getEvidence()).contains("Controller.java presente");
+        assertThat(result.analysis().getSource()).isEqualTo("AI");
     }
 
     @Test
@@ -127,6 +130,27 @@ class AnalysisServiceTest {
         assertThat(result.cached()).isFalse();
         assertThat(result.analysis().getFileCount()).isEqualTo(3);
         assertThat(result.analysis().getFramework()).isEqualTo("Spring Boot");
+        assertThat(result.analysis().getSource()).isEqualTo("HEURISTIC");
+    }
+
+    @Test
+    void analyzeExplainsWhenAGithubRepoIsInaccessible() {
+        AnalysisRepository repository = mock(AnalysisRepository.class);
+        GitHubRepoClient gitHubRepoClient = mock(GitHubRepoClient.class);
+        OpenAiClient openAiClient = mock(OpenAiClient.class);
+        AnalysisService service = new AnalysisService(repository, gitHubRepoClient, openAiClient);
+
+        when(repository.findFirstByRepoUrlOrderByCreatedAtDesc(anyString())).thenReturn(Optional.empty());
+        when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(openAiClient.isEnabled()).thenReturn(true);
+        // GitHub-shaped URL, but the client couldn't reach it (e.g. private repo, 404 unauthenticated).
+        when(gitHubRepoClient.fetch("https://github.com/acme/private-repo")).thenReturn(Optional.empty());
+
+        AnalysisResult result = service.analyze("https://github.com/acme/private-repo", false);
+
+        assertThat(result.analysis().getSource()).isEqualTo("HEURISTIC");
+        assertThat(result.analysis().getSummary()).contains("privado");
+        assertThat(result.analysis().getEvidence()).contains("privado");
     }
 
     @Test
@@ -144,5 +168,39 @@ class AnalysisServiceTest {
 
         assertThat(result.cached()).isFalse();
         verify(repository, never()).findFirstByRepoUrlOrderByCreatedAtDesc(anyString());
+    }
+
+    @Test
+    void deleteByIdReturnsTrueAndDeletesWhenPresent() {
+        AnalysisRepository repository = mock(AnalysisRepository.class);
+        AnalysisService service = new AnalysisService(repository, null, null);
+        when(repository.existsById(1L)).thenReturn(true);
+
+        boolean deleted = service.deleteById(1L);
+
+        assertThat(deleted).isTrue();
+        verify(repository).deleteById(1L);
+    }
+
+    @Test
+    void deleteByIdReturnsFalseWhenMissing() {
+        AnalysisRepository repository = mock(AnalysisRepository.class);
+        AnalysisService service = new AnalysisService(repository, null, null);
+        when(repository.existsById(99L)).thenReturn(false);
+
+        boolean deleted = service.deleteById(99L);
+
+        assertThat(deleted).isFalse();
+        verify(repository, never()).deleteById(anyLong());
+    }
+
+    @Test
+    void deleteAllDelegatesToRepository() {
+        AnalysisRepository repository = mock(AnalysisRepository.class);
+        AnalysisService service = new AnalysisService(repository, null, null);
+
+        service.deleteAll();
+
+        verify(repository).deleteAll();
     }
 }

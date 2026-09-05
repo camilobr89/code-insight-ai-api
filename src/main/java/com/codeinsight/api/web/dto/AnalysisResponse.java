@@ -18,7 +18,9 @@ public record AnalysisResponse(
         List<String> risks,
         List<String> evidence,
         Instant createdAt,
-        boolean cached) {
+        boolean cached,
+        /** "AI" si el análisis se generó con OpenAI, "HEURISTIC" si fue por fallback. */
+        String source) {
 
     public static AnalysisResponse from(Analysis analysis, boolean cached) {
         return new AnalysisResponse(
@@ -35,7 +37,8 @@ public record AnalysisResponse(
                 splitLines(analysis.getRisks()),
                 splitLines(analysis.getEvidence()),
                 analysis.getCreatedAt(),
-                cached);
+                cached,
+                analysis.getSource() != null ? analysis.getSource() : "HEURISTIC");
     }
 
     private static List<String> splitLines(String value) {

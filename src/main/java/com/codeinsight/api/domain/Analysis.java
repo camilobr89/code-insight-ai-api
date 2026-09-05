@@ -40,6 +40,8 @@ public class Analysis {
     @Column(length = 2000)
     private String evidence;
 
+    private String source = "HEURISTIC";
+
     private Instant createdAt;
 
     public Analysis() {
@@ -135,6 +137,14 @@ public class Analysis {
 
     public void setEvidence(String evidence) {
         this.evidence = evidence;
+    }
+
+    public String getSource() {
+        return source;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
     }
 
     public Instant getCreatedAt() {

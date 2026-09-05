@@ -53,15 +53,32 @@ public class AnalysisService {
         return repository.findById(id);
     }
 
+    public boolean deleteById(Long id) {
+        if (!repository.existsById(id)) {
+            return false;
+        }
+        repository.deleteById(id);
+        return true;
+    }
+
+    public void deleteAll() {
+        repository.deleteAll();
+    }
+
     private Analysis performFreshAnalysis(String repoUrl) {
         // Sin OPENAI_API_KEY se evita también la llamada a GitHub (modo 100% offline).
         if (!openAiClient.isEnabled()) {
-            return infer(repoUrl);
+            return infer(repoUrl, "No hay una API key de IA configurada.");
         }
 
+        boolean isGitHubUrl = GitHubRepoClient.parseOwnerRepo(repoUrl).isPresent();
         Optional<RepoSnapshot> snapshot = gitHubRepoClient.fetch(repoUrl);
         if (snapshot.isEmpty()) {
-            return infer(repoUrl);
+            String reason = isGitHubUrl
+                    ? "No se pudo acceder al repositorio en GitHub (puede ser privado, no existir, o el token "
+                            + "configurado no tiene acceso)."
+                    : "La URL no corresponde a un repositorio de GitHub soportado.";
+            return infer(repoUrl, reason);
         }
 
         try {
@@ -69,7 +86,7 @@ public class AnalysisService {
             return toAnalysis(repoUrl, snapshot.get(), insight);
         } catch (Exception e) {
             log.warn("Inferencia con IA falló para {}, usando heurística de respaldo: {}", repoUrl, e.getMessage());
-            Analysis heuristic = infer(repoUrl);
+            Analysis heuristic = infer(repoUrl, "La consulta a la IA falló (" + e.getMessage() + ").");
             heuristic.setFileCount(snapshot.get().fileCount());
             return heuristic;
         }
@@ -88,6 +105,7 @@ public class AnalysisService {
         analysis.setRecommendations(String.join("\n", insight.recommendations()));
         analysis.setRisks(String.join("\n", insight.risks()));
         analysis.setEvidence(String.join("\n", insight.evidence()));
+        analysis.setSource("AI");
         return analysis;
     }
 
@@ -110,6 +128,10 @@ public class AnalysisService {
     }
 
     public Analysis infer(String repoUrl) {
+        return infer(repoUrl, "no se pudo consultar GitHub/IA para esta URL");
+    }
+
+    public Analysis infer(String repoUrl, String reason) {
         String url = repoUrl == null ? "" : repoUrl.toLowerCase();
         String projectName = projectNameFrom(repoUrl);
 
@@ -142,9 +164,10 @@ public class AnalysisService {
         analysis.setSummary(String.format(
                 "Esta aplicación (%s) es un proyecto %s construido con %s. "
                         + "Expone/consume una API REST y sigue una arquitectura de %s. "
-                        + "(Análisis heurístico: no se pudo consultar GitHub/IA para esta URL.)",
+                        + "(Análisis heurístico: %s)",
                 projectName, language, framework,
-                "Angular".equals(framework) ? "componentes" : "capas"));
+                "Angular".equals(framework) ? "componentes" : "capas",
+                reason));
         analysis.setComponents(String.join("\n", detectComponents(framework)));
         analysis.setRecommendations(String.join("\n",
                 "Agregar documentación (README) con instrucciones de ejecución.",
@@ -154,7 +177,8 @@ public class AnalysisService {
                 "No se evidencia una capa de pruebas automatizadas suficiente.",
                 "Posible acoplamiento entre capas."));
         analysis.setEvidence(String.join("\n",
-                "Inferido a partir del texto de la URL (sin acceso a GitHub/IA)."));
+                "Inferido a partir del texto de la URL. " + reason));
+        analysis.setSource("HEURISTIC");
         return analysis;
     }
 
