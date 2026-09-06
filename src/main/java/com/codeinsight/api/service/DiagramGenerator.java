@@ -56,7 +56,7 @@ final class DiagramGenerator {
         sb.append("  subgraph Nucleo [Núcleo de dominio]\n");
         sb.append("    direction TB\n");
         List<String> ids = ids(nodes);
-
+        // Sin enlaces entre sí: son componentes pares, no un flujo secuencial.
         for (int i = 0; i < ids.size(); i++) {
             sb.append("    ").append(ids.get(i)).append('[').append(label(nodes.get(i))).append("]\n");
         }
