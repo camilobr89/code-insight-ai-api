@@ -12,6 +12,7 @@ import java.util.Set;
 final class DiagramGenerator {
 
     private static final int MAX_COMPONENTS = 8;
+    private static final int MAX_LABEL_LENGTH = 70;
     private static final Set<String> LAYERED_PATTERNS = Set.of("MONOLITO", "MVC", "N-CAPAS");
     private static final Set<String> CORE_CENTERED_PATTERNS = Set.of("HEXAGONAL", "CLEAN ARCHITECTURE");
 
@@ -55,11 +56,7 @@ final class DiagramGenerator {
         sb.append("  subgraph Nucleo [Núcleo de dominio]\n");
         sb.append("    direction TB\n");
         List<String> ids = ids(nodes);
-        // Sin enlaces entre ellos a propósito: son componentes pares dentro del núcleo,
-        // no un flujo secuencial, así que no se fuerza ningún orden ni apilado vertical
-        // (eso se leía visualmente como una arquitectura en capas). El frontend renderiza
-        // el SVG a tamaño real con scroll horizontal cuando no caben todos en la tarjeta,
-        // y ofrece un botón "Expandir" para verlo completo — ver DiagramRendererService.
+        // Sin enlaces entre sí: son componentes pares, no un flujo secuencial.
         for (int i = 0; i < ids.size(); i++) {
             sb.append("    ").append(ids.get(i)).append('[').append(label(nodes.get(i))).append("]\n");
         }
@@ -103,9 +100,17 @@ final class DiagramGenerator {
     /** Mermaid rompe con corchetes/comillas sin escapar dentro de una etiqueta. */
     private static String label(String raw) {
         String safe = raw.replace("\"", "'").replace("[", "(").replace("]", ")");
-        if (safe.length() > 40) {
-            safe = safe.substring(0, 37) + "...";
+        return "\"" + truncate(safe) + "\"";
+    }
+
+    private static String truncate(String text) {
+        if (text.length() <= MAX_LABEL_LENGTH) {
+            return text;
         }
-        return "\"" + safe + "\"";
+        int cut = text.lastIndexOf(' ', MAX_LABEL_LENGTH - 1);
+        if (cut <= 0) {
+            cut = MAX_LABEL_LENGTH - 1;
+        }
+        return text.substring(0, cut) + "…";
     }
 }
