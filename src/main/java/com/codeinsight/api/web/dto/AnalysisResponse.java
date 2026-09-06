@@ -18,6 +18,8 @@ public record AnalysisResponse(
         List<String> recommendations,
         List<String> risks,
         List<String> evidence,
+        /** Diagrama de arquitectura inferido, en sintaxis Mermaid (flowchart). */
+        String diagram,
         Instant createdAt,
         boolean cached,
         /** "AI" si el análisis se generó con OpenAI, "HEURISTIC" si fue por fallback. */
@@ -37,6 +39,7 @@ public record AnalysisResponse(
                 splitLines(analysis.getRecommendations()),
                 splitLines(analysis.getRisks()),
                 splitLines(analysis.getEvidence()),
+                analysis.getDiagram(),
                 analysis.getCreatedAt(),
                 cached,
                 analysis.getSource() != null ? analysis.getSource() : "HEURISTIC");

@@ -41,6 +41,9 @@ public class Analysis {
     @Column(length = 2000)
     private String evidence;
 
+    @Column(length = 2000)
+    private String diagram;
+
     private String source = "HEURISTIC";
 
     private Instant createdAt;
@@ -138,6 +141,14 @@ public class Analysis {
 
     public void setEvidence(String evidence) {
         this.evidence = evidence;
+    }
+
+    public String getDiagram() {
+        return diagram;
+    }
+
+    public void setDiagram(String diagram) {
+        this.diagram = diagram;
     }
 
     public String getSource() {

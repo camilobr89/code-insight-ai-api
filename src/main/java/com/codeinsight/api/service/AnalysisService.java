@@ -107,6 +107,7 @@ public class AnalysisService {
         analysis.setRisks(String.join("\n", insight.risks()));
         analysis.setEvidence(String.join("\n", insight.evidence()));
         analysis.setSource("AI");
+        analysis.setDiagram(DiagramGenerator.generate(insight.architecture(), insight.components()));
         return analysis;
     }
 
@@ -180,6 +181,7 @@ public class AnalysisService {
         analysis.setEvidence(String.join("\n",
                 "Inferido a partir del texto de la URL. " + reason));
         analysis.setSource("HEURISTIC");
+        analysis.setDiagram(DiagramGenerator.generate(analysis.getArchitecture(), detectComponents(framework)));
         return analysis;
     }
 

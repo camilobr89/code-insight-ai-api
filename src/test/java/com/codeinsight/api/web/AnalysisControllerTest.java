@@ -1,6 +1,7 @@
 package com.codeinsight.api.web;
 
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.startsWith;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -34,7 +35,8 @@ class AnalysisControllerTest {
                 .andExpect(jsonPath("$.projectName", is("spring-petclinic")))
                 .andExpect(jsonPath("$.framework", is("Spring Boot")))
                 .andExpect(jsonPath("$.components[0]", is("Controllers")))
-                .andExpect(jsonPath("$.source", is("HEURISTIC")));
+                .andExpect(jsonPath("$.source", is("HEURISTIC")))
+                .andExpect(jsonPath("$.diagram", startsWith("flowchart TD")));
     }
 
     @Test
