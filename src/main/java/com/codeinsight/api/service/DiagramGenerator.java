@@ -53,7 +53,13 @@ final class DiagramGenerator {
         StringBuilder sb = new StringBuilder("flowchart TD\n");
         sb.append("  Cliente([Cliente]) --> Adaptador[Adaptador de entrada]\n");
         sb.append("  subgraph Nucleo [Núcleo de dominio]\n");
+        sb.append("    direction TB\n");
         List<String> ids = ids(nodes);
+        // Sin enlaces entre ellos a propósito: son componentes pares dentro del núcleo,
+        // no un flujo secuencial, así que no se fuerza ningún orden ni apilado vertical
+        // (eso se leía visualmente como una arquitectura en capas). El frontend renderiza
+        // el SVG a tamaño real con scroll horizontal cuando no caben todos en la tarjeta,
+        // y ofrece un botón "Expandir" para verlo completo — ver DiagramRendererService.
         for (int i = 0; i < ids.size(); i++) {
             sb.append("    ").append(ids.get(i)).append('[').append(label(nodes.get(i))).append("]\n");
         }
