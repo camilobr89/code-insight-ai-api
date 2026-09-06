@@ -56,7 +56,7 @@ final class DiagramGenerator {
         sb.append("  subgraph Nucleo [Núcleo de dominio]\n");
         sb.append("    direction TB\n");
         List<String> ids = ids(nodes);
-        // Sin enlaces entre sí: son componentes pares, no un flujo secuencial.
+
         for (int i = 0; i < ids.size(); i++) {
             sb.append("    ").append(ids.get(i)).append('[').append(label(nodes.get(i))).append("]\n");
         }
@@ -97,7 +97,6 @@ final class DiagramGenerator {
         return ids;
     }
 
-    /** Mermaid rompe con corchetes/comillas sin escapar dentro de una etiqueta. */
     private static String label(String raw) {
         String safe = raw.replace("\"", "'").replace("[", "(").replace("]", ")");
         return "\"" + truncate(safe) + "\"";

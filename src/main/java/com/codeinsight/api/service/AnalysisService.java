@@ -67,7 +67,7 @@ public class AnalysisService {
     }
 
     private Analysis performFreshAnalysis(String repoUrl) {
-        // Sin OPENAI_API_KEY se evita también la llamada a GitHub (modo 100% offline).
+
         if (!openAiClient.isEnabled()) {
             return infer(repoUrl, "No hay una API key de IA configurada.");
         }
