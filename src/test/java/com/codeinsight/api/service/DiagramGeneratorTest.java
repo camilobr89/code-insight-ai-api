@@ -28,6 +28,18 @@ class DiagramGeneratorTest {
     }
 
     @Test
+    void hexagonalDoesNotForceAnOrderBetweenCoreComponents() {
+        String diagram = DiagramGenerator.generate("Hexagonal", List.of("Dominio", "Puertos", "Adaptadores"));
+
+        // Son componentes pares dentro del núcleo, no un flujo secuencial: no debe
+        // haber enlaces (ni visibles ni invisibles) entre ellos, para no sugerir un
+        // orden que no existe (eso se leía como una arquitectura en capas).
+        assertThat(diagram).doesNotContain("~~~");
+        assertThat(diagram).doesNotContain("N0 --> N1");
+        assertThat(diagram).doesNotContain("N1 --> N2");
+    }
+
+    @Test
     void microservicesFansOutFromAGateway() {
         String diagram = DiagramGenerator.generate("Microservicios", List.of("Cuentas", "Pagos"));
 
